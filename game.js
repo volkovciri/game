@@ -109,6 +109,57 @@ game =
 			return box;
 		},
 
+		button: function (_)
+		{
+			let button = game.create.sprite (_);
+				button.action = _.action || function () {};
+				button.in = _.in || function () {};
+				button.out = _.out || function () {};
+				button.over = 0;
+
+				button.active = function (event)
+				{
+					if (button.over)
+					{
+						if (!game.get.pointinbox ({ x: event.x, y: event.y }, button))
+						{
+							button.over = 0;
+							game.canvas.style.cursor = 'default';
+							button.out ();
+						}
+					} else
+					{
+						if (game.get.pointinbox ({ x: event.x, y: event.y }, button))
+						{
+							button.over = 1;
+							game.canvas.style.cursor = 'pointer';
+							button.in ();
+						}
+					}
+				}
+
+				button.mousedown = function (event)
+				{
+					if (game.get.pointinbox ({ x: event.x, y: event.y }, button))
+					{
+						button.action ();
+					}
+				}
+
+				button.mousemove = function (event)
+				{
+					button.active (event);
+				}
+
+				button.mouseup = function (event)
+				{
+					button.over = 0;
+					button.active (event);
+				}
+
+			return button;
+		},
+
 		object: function (_)
 		{
 			let object = _ || {};
@@ -200,6 +251,11 @@ game =
 					image.src = 'data/' + n + '.png';
 				game.i[n] = image;
 			}
+		},
+
+		pointinbox: function (p, b)
+		{
+			return ((p.x > b.x) && (p.x < b.x + b.w) && (p.y > b.y) && (p.y < b.y + b.h));
 		}
 	},
 
@@ -257,6 +313,13 @@ game =
 
 		tick: 25,
 		time: 0
+	},
+
+	wipe: function ()
+	{
+		game.object = {};
+		game.canvas.style.cursor = 'default';
+		game.context.clearRect (0, 0, game.canvas.width, game.canvas.height);
 	}
 }
 
@@ -276,10 +339,20 @@ game.get.images =
 //game scenes
 game.scene.load = function ()
 {
+	game.wipe ();
 	game.create.box ({ color: '#f00', h: 100, w: 100, x: 100, y: 100, z: 2 }).load ();
 	game.create.box ({ color: '#0f0', h: 100, w: 100, x: 80, y: 130, z: 1 }).load ();
 	game.create.box ({ color: '#00f', h: 100, w: 100, x: 120, y: 160, z: 3 }).load ();
 	game.create.sprite ({ h: 100, i: 'test', w: 100, x: 200, y: 160, z: 0 }).load ();
 	game.create.animation ({ a: game.a.test, delay: 1000,  h: 100, i: 'test', loop: () => 1, w: 100, x: 100, y: 70, z: 2 }).load ();
+		game.create.animation ({ a: game.a.test, delay: 1000,  h: 100, i: 'test', loop: () => 1, step:2, w: 100, x: 300, y: 70, z: 2 }).load ();
+	game.create.button ({ action: game.scene.test, h: 100, i: 'test', w: 100, x: 300, y: 200, z: 0 }).load ();
+	game.draw ();
+}
+
+game.scene.test = function ()
+{
+	game.wipe ();
+	game.create.button ({ action: game.scene.load, h: 100, i: 'test', w: 100, x: 300, y: 200, z: 0 }).load ();
 	game.draw ();
 }
